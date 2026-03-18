@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trash2, Download, FileDown, Edit3, RefreshCw, Database } from 'lucide-react'
+import { Trash2, Download, FileDown, Edit3, RefreshCw, Database, Copy } from 'lucide-react'
 import { fetchSchemas, deleteSchema, generateCSV, generateData, fetchSchema } from '../api'
 import DownloadModal from '../components/DownloadModal'
 import { useToast } from '../components/Toast'
@@ -133,8 +133,17 @@ export default function Library({ onLoadSchema, onDownload }) {
                 <span style={{ fontWeight: 600, fontSize: 15 }}>{schema.name}</span>
                 <span className="badge badge-amber">{schema.field_count} field{schema.field_count !== 1 ? 's' : ''}</span>
               </div>
-              <div className="font-mono" style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', gap: 16 }}>
-                <span>ID: {schema.id.slice(0, 8)}…</span>
+              <div className="font-mono" style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', gap: 16, alignItems: 'center' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  ID: {schema.id}
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(schema.id); toast('ID copied', 'success') }}
+                    title="Copy ID"
+                    style={{ background: 'none', border: 'none', padding: '0 2px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                  >
+                    <Copy size={10} />
+                  </button>
+                </span>
                 <span>Created: {new Date(schema.created).toLocaleDateString()}</span>
                 <span>Modified: {new Date(schema.modified).toLocaleDateString()}</span>
               </div>
