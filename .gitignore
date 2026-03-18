@@ -2,6 +2,7 @@
 .env
 *.env
 !.env.example
+CLAUDE.md
 
 # ── Runtime data (schemas, config) ───────────────────────────────────────────
 data/

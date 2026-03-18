@@ -12,7 +12,7 @@ Usage:
 from fastapi import Header, HTTPException, status
 
 
-async def require_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
+async def require_api_key(x_api_key: str = Header(default="", alias="X-API-Key")):
     # Import here to get the live value (may be updated at runtime by key-roll)
     from routers.settings import get_active_api_key
     active = get_active_api_key()

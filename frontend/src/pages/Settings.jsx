@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import {
   KeyRound, Eye, EyeOff, RefreshCw, Copy, Check,
   ShieldCheck, AlertTriangle, Sun, Moon, Palette,
-  Download, BarChart2, Clock,
+  Download, BarChart2, Clock, Trash2,
 } from 'lucide-react'
-import { fetchKeyStatus, revealKey, rollKey, setInitialKey, setApiKey } from '../api'
+import { fetchKeyStatus, revealKey, rollKey, setInitialKey, clearKey, emergencyReset, setApiKey, clearApiKey } from '../api'
 import { useToast } from '../components/Toast'
 import { useSettingsContext } from '../SettingsContext'
 import { ACCENT_PRESETS } from '../useSettings'
@@ -85,6 +85,8 @@ export default function Settings({ usageStats }) {
   const [copied, setCopied] = useState(false)
   const [newKeyInput, setNewKeyInput] = useState('')
   const [settingKey, setSettingKey] = useState(false)
+  const [clearing, setClearing] = useState(false)
+  const [resetting, setResetting] = useState(false)
 
   const loadStatus = async () => {
     try { setKeyStatus(await fetchKeyStatus()) }
@@ -147,6 +149,32 @@ export default function Settings({ usageStats }) {
   const generateRandomKey = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     setNewKeyInput(Array.from({ length: 32 }, () => chars[Math.floor(Math.random() * chars.length)]).join(''))
+  }
+
+  const handleClearKey = async () => {
+    if (!confirm('Clear the stored API key? The server will revert to the API_KEY environment variable. Your session will be cleared.')) return
+    setClearing(true)
+    try {
+      await clearKey()
+      clearApiKey()
+      setFullKey(null); setShowKey(false)
+      await loadStatus()
+      toast('Stored key cleared — server reverted to environment key', 'success')
+    } catch { toast('Failed to clear key — your session key may be wrong', 'error') }
+    finally { setClearing(false) }
+  }
+
+  const handleEmergencyReset = async () => {
+    if (!confirm('Emergency reset: clear the stored key without authentication?\n\nThis only works when no API_KEY is set in the environment. The server will return to unconfigured state.')) return
+    setResetting(true)
+    try {
+      await emergencyReset()
+      clearApiKey()
+      setFullKey(null); setShowKey(false)
+      await loadStatus()
+      toast('Emergency reset complete — server is unconfigured', 'success')
+    } catch (e) { toast(e.message || 'Emergency reset failed or is disabled on this server', 'error') }
+    finally { setResetting(false) }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -418,6 +446,30 @@ export default function Settings({ usageStats }) {
         )}
 
         {/* Key management */}
+        {/* Emergency reset — always visible as a recovery tool */}
+        {keyStatus !== null && (
+          <div style={{
+            marginTop: 20, padding: '12px 14px',
+            background: 'rgba(248,113,113,0.05)',
+            border: '1px solid rgba(248,113,113,0.2)',
+            borderRadius: 'var(--radius)',
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--danger)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <AlertTriangle size={12} /> Emergency Reset
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 10px' }}>
+              Locked out and can't authenticate? This clears the stored key without a password.
+              Only works when <span style={{ fontFamily: 'Space Mono, monospace' }}>API_KEY</span> is
+              not set in the server environment (i.e., still the default <span style={{ fontFamily: 'Space Mono, monospace' }}>changeme</span>).
+            </p>
+            <button className="btn btn-secondary" onClick={handleEmergencyReset} disabled={resetting}
+              style={{ fontSize: 12, color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.4)' }}>
+              <Trash2 size={12} />
+              {resetting ? 'Resetting…' : 'Emergency Reset'}
+            </button>
+          </div>
+        )}
+
         {keyStatus?.has_key && (
           <div>
             <label style={label}>Current key</label>
@@ -440,13 +492,18 @@ export default function Settings({ usageStats }) {
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button className="btn btn-secondary" onClick={handleRoll} disabled={rolling}>
                 <RefreshCw size={13} className={rolling ? 'animate-spin' : ''} />
                 {rolling ? 'Rolling…' : 'Roll Key'}
               </button>
+              <button className="btn btn-secondary" onClick={handleClearKey} disabled={clearing}
+                style={{ color: 'var(--danger)', borderColor: 'rgba(248,113,113,0.4)' }}>
+                <Trash2 size={13} />
+                {clearing ? 'Clearing…' : 'Clear Key'}
+              </button>
               <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-                Generates a new random key and saves it to the server immediately.
+                Roll generates a new key. Clear removes the stored key, reverting to the environment default.
               </span>
             </div>
 

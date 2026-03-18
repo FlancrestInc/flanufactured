@@ -68,10 +68,44 @@ class SetKeyRequest(BaseModel):
     key: str
 
 
+@router.post("/key-clear", dependencies=[Depends(require_api_key)])
+def clear_key():
+    """Remove the stored key from .config, reverting to the API_KEY env var (or 'changeme')."""
+    cfg = _load_config()
+    cfg.pop("api_key", None)
+    cfg.pop("key_created_at", None)
+    _save_config(cfg)
+    settings.api_key = os.environ.get("API_KEY", "changeme")
+    return {"status": "ok", "detail": "Stored key cleared. Falling back to environment API_KEY."}
+
+
+@router.post("/key-emergency-reset")
+def emergency_reset():
+    """
+    Clear the stored key without authentication.
+    Only works when the API_KEY environment variable is still the default 'changeme',
+    meaning no real security has been configured. This prevents abuse on secured instances.
+    """
+    env_key = os.environ.get("API_KEY", "changeme")
+    if env_key != "changeme":
+        raise HTTPException(
+            status_code=403,
+            detail="Emergency reset is disabled when API_KEY env var is set. Use /key-roll with your current key instead."
+        )
+    cfg = _load_config()
+    cfg.pop("api_key", None)
+    cfg.pop("key_created_at", None)
+    _save_config(cfg)
+    settings.api_key = "changeme"
+    return {"status": "ok", "detail": "Stored key cleared. Server is back to unconfigured state."}
+
+
 @router.post("/key-set")
 def set_key(req: SetKeyRequest):
-    current = get_active_api_key()
-    if current and current != "changeme":
+    # Only block if a key is explicitly stored in .config — not if only the env var is set.
+    # This allows users to set a key via the UI even when API_KEY is set in the environment.
+    cfg = _load_config()
+    if cfg.get("api_key"):
         raise HTTPException(status_code=403, detail="A key is already set. Use /key-roll to change it.")
     if not req.key or len(req.key) < 8:
         raise HTTPException(status_code=400, detail="Key must be at least 8 characters.")

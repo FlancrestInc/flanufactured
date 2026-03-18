@@ -7,7 +7,8 @@ import Navbar from './components/Navbar'
 import Builder from './pages/Builder'
 import Library from './pages/Library'
 import Settings from './pages/Settings'
-import { fetchSchemas } from './api'
+import ApiKeyModal from './components/ApiKeyModal'
+import { fetchSchemas, fetchKeyStatus, getApiKey } from './api'
 
 // Apply saved theme immediately before first render
 applyTheme(loadSettings())
@@ -15,6 +16,17 @@ applyTheme(loadSettings())
 export default function App() {
   const [loadedSchema, setLoadedSchema] = useState(null)
   const [schemaVersion, setSchemaVersion] = useState(0)
+  const [showKeyModal, setShowKeyModal] = useState(false)
+
+  // On mount: if no session key is stored, check whether the server has one configured.
+  // If so, prompt the user to enter it so their requests can authenticate.
+  useEffect(() => {
+    if (!getApiKey()) {
+      fetchKeyStatus()
+        .then(status => { if (status.has_key) setShowKeyModal(true) })
+        .catch(() => {})
+    }
+  }, [])
 
   // Session usage stats — lifted to App so Settings can read them
   const [usageStats, setUsageStats] = useState({
@@ -37,6 +49,7 @@ export default function App() {
   return (
     <SettingsProvider>
       <ToastProvider>
+        {showKeyModal && <ApiKeyModal onSave={() => setShowKeyModal(false)} />}
         <BrowserRouter>
           <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
             <Navbar />

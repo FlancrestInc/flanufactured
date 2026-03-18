@@ -35,6 +35,9 @@ export function clearApiKey()  { sessionStorage.removeItem('flanufactured_api_ke
 export const fetchKeyStatus   = ()    => fetch('/api/settings/key-status').then(r => r.json())
 export const revealKey        = ()    => client.get('/settings/key-reveal').then(r => r.data)
 export const rollKey          = ()    => client.post('/settings/key-roll').then(r => r.data)
+export const clearKey         = ()    => client.post('/settings/key-clear').then(r => r.data)
+export const emergencyReset   = ()    => fetch('/api/settings/key-emergency-reset', { method: 'POST' })
+  .then(r => { if (!r.ok) return r.json().then(d => { throw new Error(d.detail || 'Failed') }); return r.json() })
 export const setInitialKey    = (key) => fetch('/api/settings/key-set', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
