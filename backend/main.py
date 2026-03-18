@@ -9,7 +9,7 @@ In development, run the Vite dev server separately (it proxies /api to this proc
 """
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
@@ -19,6 +19,7 @@ app = FastAPI(
     title="Flanufactured",
     description="Fake data generation API & UI",
     version="1.0.0",
+    redoc_url=None,  # Disable default ReDoc (uses jsdelivr with broken MIME type)
 )
 
 app.add_middleware(
@@ -37,6 +38,24 @@ app.include_router(settings.router)
 @app.get("/health", tags=["System"])
 def health():
     return {"status": "ok", "version": "1.0.0"}
+
+
+@app.get("/redoc", include_in_schema=False)
+def redoc():
+    return HTMLResponse("""<!DOCTYPE html>
+<html>
+  <head>
+    <title>Flanufactured — API Reference</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+    <style>body { margin: 0; padding: 0; }</style>
+  </head>
+  <body>
+    <redoc spec-url="/openapi.json"></redoc>
+    <script src="https://unpkg.com/redoc@2.1.5/bundles/redoc.standalone.js"></script>
+  </body>
+</html>""")
 
 
 frontend_dist = "/app/frontend/dist"

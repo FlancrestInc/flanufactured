@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   KeyRound, Eye, EyeOff, RefreshCw, Copy, Check,
   ShieldCheck, AlertTriangle, Sun, Moon, Palette,
-  Download, BarChart2, Clock, Trash2,
+  Download, BarChart2, Clock, Trash2, BookOpen, ExternalLink,
 } from 'lucide-react'
 import { fetchKeyStatus, revealKey, rollKey, setInitialKey, clearKey, emergencyReset, setApiKey, clearApiKey } from '../api'
 import { useToast } from '../components/Toast'
@@ -520,6 +520,21 @@ export default function Settings({ usageStats }) {
             )}
           </div>
         )}
+
+        {/* API docs links */}
+        <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <BookOpen size={12} /> API Documentation
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <a href="/docs" target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ fontSize: 12, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              Swagger UI <ExternalLink size={11} />
+            </a>
+            <a href="/redoc" target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ fontSize: 12, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              ReDoc <ExternalLink size={11} />
+            </a>
+          </div>
+        </div>
       </Section>
     </div>
   )
