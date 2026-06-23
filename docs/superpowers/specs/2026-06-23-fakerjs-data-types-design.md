@@ -6,7 +6,7 @@ Expand Flanufactured so its generated data types match the FakerJS API catalog a
 
 ## Scope
 
-The target catalog is FakerJS v10.4.0 API modules:
+The target catalog is FakerJS v10.5.0 API modules:
 
 - Airline
 - Animal
