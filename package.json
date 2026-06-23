@@ -1,0 +1,11 @@
+{
+  "name": "flanufactured-fakerjs-helper",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:fakerjs": "node --test backend/fakerjs_generate.test.mjs"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^10.5.0"
+  }
+}
