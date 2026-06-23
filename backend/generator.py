@@ -284,6 +284,14 @@ US_CITIES_BY_STATE = {
     "Wyoming":       ["Cheyenne","Casper","Laramie"],
 }
 
+def _blank_percent(options: dict) -> float:
+    try:
+        percent = float((options or {}).get("blank_percent", 0) or 0)
+    except (TypeError, ValueError):
+        percent = 0
+    return max(0, min(100, percent))
+
+
 def _generate_value(field: FieldDefinition, fake: Faker, row_index: int, row_context: dict):
     """
     Generate a single value for one field.
@@ -302,6 +310,10 @@ def _generate_value(field: FieldDefinition, fake: Faker, row_index: int, row_con
     """
     t = field.type
     opts = field.options or {}
+
+    blank_percent = _blank_percent(opts)
+    if blank_percent and random.random() < (blank_percent / 100):
+        return None
 
     if t == "row_number":    return row_index + 1
     if t == "guid":          return str(fake.uuid4())
