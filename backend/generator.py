@@ -31,6 +31,8 @@ from faker import Faker
 from faker.config import AVAILABLE_LOCALES
 from models import FieldDefinition
 from config import settings
+from fakerjs_bridge import generate_fakerjs_values
+from fakerjs_catalog import FAKERJS_FIELD_TYPES, get_fakerjs_field_types_grouped
 
 
 def get_faker(locale: str = "en_US") -> Faker:
@@ -315,6 +317,9 @@ def _generate_value(field: FieldDefinition, fake: Faker, row_index: int, row_con
     if blank_percent and random.random() < (blank_percent / 100):
         return None
 
+    if t in FAKERJS_FIELD_TYPES:
+        return generate_fakerjs_values([{"key": t, "options": opts}], seed=None)[0]
+
     if t == "row_number":    return row_index + 1
     if t == "guid":          return str(fake.uuid4())
     if t == "boolean":       return fake.boolean()
@@ -573,4 +578,7 @@ def get_field_types_grouped():
             "examples": meta.get("examples", []),
             "advanced": meta.get("advanced", False),
         })
+    fakerjs_grouped = get_fakerjs_field_types_grouped()
+    for cat, entries in fakerjs_grouped.items():
+        grouped.setdefault(cat, []).extend(entries)
     return grouped

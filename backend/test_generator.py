@@ -59,5 +59,19 @@ class BlankPercentTests(unittest.TestCase):
         self.assertTrue(all(row["name"] for row in data))
 
 
+class FakerJSGenerationTests(unittest.TestCase):
+    def test_fakerjs_field_generates_value(self):
+        fields = [
+            FieldDefinition(name="first_name", type="person.firstName", options={})
+        ]
+
+        data, _ = generate_dataset(fields, rows=2, seed=123)
+
+        self.assertEqual(len(data), 2)
+        self.assertTrue(
+            all(isinstance(row["first_name"], str) and row["first_name"] for row in data)
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
