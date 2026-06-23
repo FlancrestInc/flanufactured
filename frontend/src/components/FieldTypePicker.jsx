@@ -1,14 +1,12 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { X, Search, ChevronDown, ChevronUp } from 'lucide-react'
+import { X, Search } from 'lucide-react'
 import Portal from './Portal'
 
-const CATEGORY_ORDER = ['Core','Personal','Location','Internet','Finance','Vehicle','DateTime','Text','Wacky']
 const NAVBAR_HEIGHT = 54 // px — must match the nav height in Navbar.jsx
 
 export default function FieldTypePicker({ fieldTypes, currentType, onSelect, onClose }) {
   const [search, setSearch] = useState('')
-  const [showAdvanced, setShowAdvanced] = useState(false)
-  const [hoveredType, setHoveredType] = useState(null)
+  const [activeCategory, setActiveCategory] = useState('All')
   const searchRef = useRef(null)
 
   useEffect(() => {
@@ -27,17 +25,24 @@ export default function FieldTypePicker({ fieldTypes, currentType, onSelect, onC
 
   const allTypes = useMemo(() => {
     const flat = []
-    for (const cat of CATEGORY_ORDER) {
+    for (const cat of Object.keys(fieldTypes || {})) {
       const types = fieldTypes[cat] || []
       for (const t of types) flat.push({ ...t, category: cat })
     }
     return flat
   }, [fieldTypes])
 
-  const filtered = useMemo(() => {
+  const categories = useMemo(() => (
+    Object.keys(fieldTypes || {}).map(name => ({
+      name,
+      count: (fieldTypes[name] || []).length,
+    }))
+  ), [fieldTypes])
+
+  const visibleTypes = useMemo(() => {
     const q = search.toLowerCase().trim()
     return allTypes.filter(t => {
-      if (!showAdvanced && t.advanced) return false
+      if (activeCategory !== 'All' && t.category !== activeCategory) return false
       if (!q) return true
       return (
         t.label.toLowerCase().includes(q) ||
@@ -46,18 +51,7 @@ export default function FieldTypePicker({ fieldTypes, currentType, onSelect, onC
         t.category.toLowerCase().includes(q)
       )
     })
-  }, [allTypes, search, showAdvanced])
-
-  const grouped = useMemo(() => {
-    const g = {}
-    for (const t of filtered) {
-      if (!g[t.category]) g[t.category] = []
-      g[t.category].push(t)
-    }
-    return g
-  }, [filtered])
-
-  const advancedCount = allTypes.filter(t => t.advanced).length
+  }, [allTypes, search, activeCategory])
 
   return (
     <Portal>
@@ -89,168 +83,108 @@ export default function FieldTypePicker({ fieldTypes, currentType, onSelect, onC
             background: 'var(--bg-surface)',
             border: '1px solid var(--border-bright)',
             borderRadius: 10,
-            width: 680,
-            maxWidth: '95vw',
+            width: 1120,
+            maxWidth: '96vw',
             maxHeight: 'calc(100vh - 54px - 64px)',
             display: 'flex',
             flexDirection: 'column',
             boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
             animation: 'fadeIn 0.18s ease',
           }}
-        >
+          >
           {/* Header */}
-          <div style={{ padding: '18px 20px 0', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <span className="font-display" style={{ fontSize: 22, color: 'var(--accent)' }}>SELECT FIELD TYPE</span>
+          <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>Choose a Type</span>
+
+              <div style={{ flex: 1 }} />
+
+              <div style={{ position: 'relative', width: 260, maxWidth: '45vw' }}>
+                <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                <input
+                  ref={searchRef}
+                  className="input"
+                  style={{ paddingLeft: 36, fontSize: 14 }}
+                  placeholder="Find Type..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+
               <button className="btn btn-ghost btn-sm" onClick={onClose}><X size={14} /></button>
-            </div>
-
-            {/* Search */}
-            <div style={{ position: 'relative', marginBottom: 10 }}>
-              <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-              <input
-                ref={searchRef}
-                className="input"
-                style={{ paddingLeft: 30, fontSize: 13 }}
-                placeholder="Search types…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-
-            {/* Footer row: count + advanced toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {filtered.length} type{filtered.length !== 1 ? 's' : ''}
-              </span>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => setShowAdvanced(a => !a)}
-                style={{ fontSize: 11, color: showAdvanced ? 'var(--accent)' : 'var(--text-muted)', gap: 4 }}
-              >
-                {showAdvanced ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                {showAdvanced ? 'Hide' : 'Show'} advanced ({advancedCount})
-              </button>
             </div>
           </div>
 
-          {/* Body: list + preview */}
+          {/* Body: category nav + grid */}
           <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
 
-            {/* Type list */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
-              {Object.entries(grouped).length === 0 && (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', fontSize: 13 }}>
-                  No types match "{search}"
-                </div>
-              )}
-              {CATEGORY_ORDER.filter(c => grouped[c]).map(cat => (
-                <div key={cat}>
-                  <div style={{
-                    padding: '6px 16px 4px',
-                    fontSize: 10,
-                    fontFamily: 'Space Mono, monospace',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                    color: 'var(--text-muted)',
-                    background: 'var(--bg-primary)',
-                    borderTop: '1px solid var(--border)',
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 1,
-                  }}>
-                    {cat}
-                  </div>
-                  {grouped[cat].map(t => (
-                    <div
-                      key={t.type}
-                      onClick={() => { onSelect(t.type); onClose() }}
-                      onMouseEnter={() => setHoveredType(t)}
-                      style={{
-                        padding: '8px 16px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        background: (hoveredType?.type === t.type || currentType === t.type)
-                          ? 'var(--bg-elevated)' : 'transparent',
-                        borderLeft: currentType === t.type
-                          ? '2px solid var(--accent)'
-                          : '2px solid transparent',
-                        transition: 'background 0.1s',
-                      }}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: 13,
-                          fontWeight: 500,
-                          color: currentType === t.type ? 'var(--accent)' : 'var(--text-primary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                        }}>
-                          {t.label}
-                          {t.advanced && (
-                            <span className="badge badge-muted" style={{ fontSize: 9, padding: '1px 5px' }}>ADV</span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {t.description}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-
-            {/* Preview panel */}
-            <div style={{
-              width: 220,
+            <aside style={{
+              width: 180,
               flexShrink: 0,
-              borderLeft: '1px solid var(--border)',
-              padding: 16,
+              borderRight: '1px solid var(--border)',
               overflowY: 'auto',
               background: 'var(--bg-primary)',
             }}>
-              {hoveredType ? (
-                <div className="animate-fade-in" key={hoveredType.type}>
-                  <div className="font-display" style={{ fontSize: 16, color: 'var(--accent)', marginBottom: 6 }}>
-                    {hoveredType.label.toUpperCase()}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5 }}>
-                    {hoveredType.description}
-                  </div>
-                  {hoveredType.examples?.length > 0 && (
-                    <>
-                      <div style={{ fontSize: 10, fontFamily: 'Space Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6 }}>
-                        Examples
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {hoveredType.examples.map((ex, i) => (
-                          <div key={i} style={{
-                            background: 'var(--bg-elevated)',
-                            border: '1px solid var(--border-bright)',
-                            borderRadius: 4,
-                            padding: '4px 8px',
-                            fontSize: 11,
-                            fontFamily: 'Space Mono, monospace',
-                            color: 'var(--accent)',
-                            wordBreak: 'break-all',
-                          }}>
-                            {ex}
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                  <div style={{ fontSize: 10, fontFamily: 'Space Mono, monospace', color: 'var(--text-muted)', marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                    type: {hoveredType.type}
-                  </div>
+              {[{ name: 'All', count: allTypes.length }, ...categories].map(cat => (
+                <button
+                  key={cat.name}
+                  onClick={() => setActiveCategory(cat.name)}
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    border: 'none',
+                    borderLeft: activeCategory === cat.name ? '3px solid var(--accent)' : '3px solid transparent',
+                    background: activeCategory === cat.name ? 'var(--bg-elevated)' : 'transparent',
+                    color: activeCategory === cat.name ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: activeCategory === cat.name ? 700 : 500,
+                  }}
+                >
+                  <span>{cat.name}</span>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({cat.count})</span>
+                </button>
+              ))}
+            </aside>
+
+            <div style={{ flex: 1, overflowY: 'auto', padding: 20, background: 'var(--bg-elevated)' }}>
+              {visibleTypes.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', fontSize: 13 }}>
+                  No types match "{search}"
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)', fontSize: 12, lineHeight: 1.6 }}>
-                  Hover a type<br/>to see examples
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '22px 30px' }}>
+                  {visibleTypes.map(t => (
+                    <button
+                      key={t.type}
+                      onClick={() => { onSelect(t.type); onClose() }}
+                      style={{
+                        textAlign: 'left',
+                        border: 'none',
+                        borderLeft: currentType === t.type ? '2px solid var(--accent)' : '2px solid transparent',
+                        background: currentType === t.type ? 'var(--bg-hover)' : 'transparent',
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer',
+                        padding: '0 0 0 10px',
+                        minHeight: 76,
+                      }}
+                    >
+                      <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.2, marginBottom: 5 }}>
+                        {t.label}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                        {t.description}
+                      </div>
+                      {t.examples?.length > 0 && (
+                        <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                          {t.examples.slice(0, 3).join(', ')}
+                        </div>
+                      )}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
