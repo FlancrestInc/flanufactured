@@ -6,7 +6,7 @@ import os, secrets, json
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api/settings", tags=["Settings"])
-CONFIG_PATH = os.path.join(os.environ.get("DATA_DIR", "/app/data"), ".config")
+CONFIG_PATH = os.path.join(settings.data_dir, ".config")
 
 
 def _load_config() -> dict:

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2, Download, FileDown, Edit3, RefreshCw, Database, Copy } from 'lucide-react'
-import { fetchSchemas, deleteSchema, generateCSV, generateData, fetchSchema } from '../api'
+import { fetchSchemas, deleteSchema, fetchSchema, getApiKey } from '../api'
 import DownloadModal from '../components/DownloadModal'
 import { useToast } from '../components/Toast'
 import { useSettingsContext } from '../SettingsContext'
@@ -53,7 +53,7 @@ export default function Library({ onLoadSchema, onDownload }) {
   const handleDownload = async ({ rows, format, locale, seed }) => {
     setDownloadLoading(true)
     try {
-      const key = sessionStorage.getItem('flanufactured_api_key') || ''
+      const key = getApiKey()
       const res = await fetch(`/api/generate/${downloadTarget.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-API-Key': key },
@@ -76,8 +76,8 @@ export default function Library({ onLoadSchema, onDownload }) {
     }
   }
 
-    const handleExportSchema = async (id, name) => {
-    const key = sessionStorage.getItem('flanufactured_api_key') || ''
+  const handleExportSchema = async (id, name) => {
+    const key = getApiKey()
     const res = await fetch(`/api/schemas/${id}/export`, { headers: { 'X-API-Key': key } })
     const blob = await res.blob()
     triggerDownload(blob, `${name}.schema.json`, 'application/json')

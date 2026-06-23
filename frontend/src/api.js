@@ -2,13 +2,13 @@
  * api.js — All server communication for the Flanufactured frontend.
  *
  * An axios instance is created with baseURL '/api'. A request interceptor
- * injects the X-API-Key header from sessionStorage on every call.
+ * injects the X-API-Key header from browser storage on every call.
  *
- * The API key is stored in sessionStorage (not localStorage) so it is cleared
- * when the browser tab is closed, providing a mild security improvement.
+ * The API key is stored in localStorage so authenticated browser sessions
+ * survive tab/window restarts. Older sessionStorage values are migrated.
  *
  * Exports:
- *   setApiKey / getApiKey / clearApiKey  — sessionStorage helpers
+ *   setApiKey / getApiKey / clearApiKey  — API key storage helpers
  *   fetchKeyStatus / revealKey / rollKey / setInitialKey  — Settings endpoints
  *   fetchFieldTypes                       — Type registry for the picker modal
  *   generateData / generateCSV            — Inline data generation
@@ -19,17 +19,33 @@
 import axios from 'axios'
 
 const client = axios.create({ baseURL: '/api' })
+const API_KEY_STORAGE_KEY = 'flanufactured_api_key'
 
 // Inject stored API key into every request
 client.interceptors.request.use((config) => {
-  const key = sessionStorage.getItem('flanufactured_api_key') || ''
+  const key = getApiKey()
   if (key) config.headers['X-API-Key'] = key
   return config
 })
 
-export function setApiKey(key) { sessionStorage.setItem('flanufactured_api_key', key) }
-export function getApiKey()    { return sessionStorage.getItem('flanufactured_api_key') || '' }
-export function clearApiKey()  { sessionStorage.removeItem('flanufactured_api_key') }
+export function setApiKey(key) {
+  localStorage.setItem(API_KEY_STORAGE_KEY, key)
+  sessionStorage.removeItem(API_KEY_STORAGE_KEY)
+}
+
+export function getApiKey() {
+  const persistedKey = localStorage.getItem(API_KEY_STORAGE_KEY) || ''
+  if (persistedKey) return persistedKey
+
+  const sessionKey = sessionStorage.getItem(API_KEY_STORAGE_KEY) || ''
+  if (sessionKey) setApiKey(sessionKey)
+  return sessionKey
+}
+
+export function clearApiKey() {
+  localStorage.removeItem(API_KEY_STORAGE_KEY)
+  sessionStorage.removeItem(API_KEY_STORAGE_KEY)
+}
 
 // ── Settings / Key management ──────────────────────────────────────────────
 export const fetchKeyStatus   = ()    => fetch('/api/settings/key-status').then(r => r.json())
@@ -51,7 +67,7 @@ export const fetchFieldTypes = () => client.get('/field-types').then(r => r.data
 export const generateData = (payload) => client.post('/generate', payload).then(r => r.data)
 
 export const generateCSV = async (payload) => {
-  const key = sessionStorage.getItem('flanufactured_api_key') || ''
+  const key = getApiKey()
   const res = await fetch('/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-API-Key': key },
@@ -75,7 +91,7 @@ export const importSchemaFile = (file) => {
   }).then(r => r.data)
 }
 export const exportSchemaFile = async (id, name) => {
-  const key = sessionStorage.getItem('flanufactured_api_key') || ''
+  const key = getApiKey()
   const res = await fetch(`/api/schemas/${id}/export`, { headers: { 'X-API-Key': key } })
   const blob = await res.blob()
   triggerDownload(blob, `${name}.schema.json`, 'application/json')

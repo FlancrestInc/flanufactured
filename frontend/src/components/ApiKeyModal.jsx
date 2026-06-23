@@ -32,7 +32,7 @@ export default function ApiKeyModal({ onSave }) {
         <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 16, marginTop: 0 }}>
           Enter the <span className="font-mono" style={{ color: 'var(--text-primary)', fontSize: 12 }}>API_KEY</span> value
           from your server's <span className="font-mono" style={{ color: 'var(--text-primary)', fontSize: 12 }}>.env</span> file.
-          It will be stored in your browser for this session.
+          It will be stored in this browser for future visits.
         </p>
 
         <input

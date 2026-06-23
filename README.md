@@ -575,7 +575,7 @@ The backend is structured as a standard FastAPI application with three routers:
 
 - **Theming** — All colors are CSS custom properties on `:root`. `applyTheme()` in `useSettings.js` writes directly to `document.documentElement.style`, so theme and accent color changes apply instantly to every component without re-renders.
 - **Settings persistence** — A single `flanufactured_settings` key in `localStorage` stores all UI preferences. The `useSettings` hook reads this on mount and writes on every change.
-- **API key storage** — The API key is stored in `sessionStorage` (cleared on browser close) rather than `localStorage`, providing a mild security improvement.
+- **API key storage** — The API key is stored in `localStorage` so the web UI stays authenticated across browser restarts. Use **Settings → API Key → Clear stored key** to remove it from the browser and server config.
 - **Portals** — The field type picker modal renders via `createPortal` into `document.body`, escaping the DOM stacking context of its parent `FieldRow`. This ensures it renders above everything and is not clipped by the layout.
 - **Auto-naming** — Fields with no name are assigned one based on their type before any API call. Duplicates get `_1`, `_2` suffixes. This happens only in the outgoing payload; the UI fields themselves are not modified.
 - **Row context** — The backend passes a `row_context` dict through `generate_row()`. Each generated value is stored in it by both field name and field type, allowing downstream fields to see what was already generated for that row.

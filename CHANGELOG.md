@@ -64,7 +64,7 @@ All notable changes to Flanufactured are documented here.
   - Usage stats: schemas saved, previews/downloads/rows this session
   - API key: status badge, creation date with >365-day warning, reveal/copy/roll controls, first-run setup flow
 - **Theming** — CSS custom properties written directly to `:root` by `applyTheme()`; changes apply instantly without re-renders; persists across sessions via `localStorage`
-- **API key** stored in `sessionStorage` (cleared on browser close)
+- **API key** stored in `localStorage` so the web UI stays authenticated across browser restarts
 - Field type picker rendered via React portal (`createPortal`) to escape DOM stacking context
 - Toast notification system (success/error/info/warning)
 - Phosphor green terminal aesthetic with scanline overlay; dark/light mode supported
