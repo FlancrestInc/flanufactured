@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Trash2, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react'
 import FieldOptions from './FieldOptions'
 import FieldTypePicker from './FieldTypePicker'
+import { clampBlankPercent, optionsForTypeChange } from '../field-row-options'
 
 export default function FieldRow({ field, fieldTypes, onChange, onDelete, index }) {
   const [expanded, setExpanded] = useState(false)
@@ -60,7 +61,7 @@ export default function FieldRow({ field, fieldTypes, onChange, onDelete, index 
           {/* Type picker button */}
           <button
             className="btn btn-secondary"
-            style={{ flex: 1, justifyContent: 'space-between', minWidth: 0, fontSize: 13, padding: '7px 10px', textAlign: 'left' }}
+            style={{ flex: 1, justifyContent: 'space-between', minWidth: 150, fontSize: 13, padding: '7px 10px', textAlign: 'left' }}
             onClick={() => setShowPicker(true)}
           >
             <span style={{
@@ -72,6 +73,27 @@ export default function FieldRow({ field, fieldTypes, onChange, onDelete, index 
             </span>
             <ChevronRight size={12} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
           </button>
+
+          {/* Blank percentage */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, fontSize: 12, color: 'var(--text-secondary)' }}>
+            <span>blank:</span>
+            <input
+              className="input"
+              type="number"
+              min={0}
+              max={100}
+              value={field.options?.blank_percent ?? 0}
+              onChange={e => onChange({
+                ...field,
+                options: {
+                  ...(field.options || {}),
+                  blank_percent: clampBlankPercent(e.target.value),
+                },
+              })}
+              style={{ width: 64, textAlign: 'right', fontFamily: 'Space Mono, monospace', fontSize: 12 }}
+            />
+            <span>%</span>
+          </label>
 
           {/* Options toggle */}
           {hasOptions && (
@@ -99,7 +121,7 @@ export default function FieldRow({ field, fieldTypes, onChange, onDelete, index 
         <FieldTypePicker
           fieldTypes={fieldTypes}
           currentType={field.type}
-          onSelect={type => onChange({ ...field, type, options: {} })}
+          onSelect={type => onChange({ ...field, type, options: optionsForTypeChange(field.options) })}
           onClose={() => setShowPicker(false)}
         />
       )}
