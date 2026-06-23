@@ -73,5 +73,19 @@ class FakerJSGenerationTests(unittest.TestCase):
         )
 
 
+class FakerJSBatchTests(unittest.TestCase):
+    def test_multiple_fakerjs_fields_generate_for_multiple_rows(self):
+        fields = [
+            FieldDefinition(name="first_name", type="person.firstName", options={}),
+            FieldDefinition(name="email", type="internet.email", options={}),
+        ]
+
+        data, _ = generate_dataset(fields, rows=3, seed=321)
+
+        self.assertEqual(len(data), 3)
+        self.assertTrue(all(row["first_name"] for row in data))
+        self.assertTrue(all("@" in row["email"] for row in data))
+
+
 if __name__ == "__main__":
     unittest.main()

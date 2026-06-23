@@ -554,7 +554,33 @@ def generate_dataset(fields, rows, locale="en_US", seed=None, output_format="jso
     if seed is not None:
         Faker.seed(seed)
         random.seed(seed)
-    records = [generate_row(fields, fake, i) for i in range(rows)]
+
+    fakerjs_requests = [
+        {"key": field.type, "options": field.options or {}}
+        for _ in range(rows)
+        for field in fields
+        if field.type in FAKERJS_FIELD_TYPES
+    ]
+    fakerjs_values = generate_fakerjs_values(fakerjs_requests, seed=seed) if fakerjs_requests else []
+    fakerjs_index = 0
+
+    records = []
+    for row_index in range(rows):
+        row, context = {}, {}
+        records.append(row)
+        for field in fields:
+            opts = field.options or {}
+            if field.type in FAKERJS_FIELD_TYPES:
+                generated_value = fakerjs_values[fakerjs_index]
+                fakerjs_index += 1
+                blank_percent = _blank_percent(opts)
+                val = None if blank_percent and random.random() < (blank_percent / 100) else generated_value
+            else:
+                val = _generate_value(field, fake, row_index, context)
+            row[field.name] = val
+            context[field.type] = val
+            context[field.name] = val
+
     if output_format == "csv":
         if not records: return "", "text/csv"
         buf = io.StringIO()
